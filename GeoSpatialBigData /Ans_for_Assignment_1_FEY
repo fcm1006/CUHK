@@ -56,3 +56,21 @@ with open('/content/wellcome stores.csv','r') as infile:
         print(f'{store_address} is {distance:.2f}km away from Tsim Sha Tsui Station')
       # else:
       #   print(f'Could not retrieve coordinates for address "{store_address} or it is more than 1km away Tsim Sha Tsui Station"')
+
+
+******
+
+Shop C and Portion of Shop D on Ground Floor, Chevalier House, Nos. 45-51 Chatham Road South, Kowloon
+ is 0.37km away from Tsim Sha Tsui Station
+Ground Floor, Luna Court, Nos 53-54, Kimberley Road, Tsim Sha Tsui, Kowloon.
+ is 0.43km away from Tsim Sha Tsui Station
+Ground Floor, Liberty Mansion, 26E Jordan Road, Kowloon
+ is 0.84km away from Tsim Sha Tsui Station
+Basement, Far East Consortium Building, No. 204-206 Nathan Road. Kowloon
+ is 0.66km away from Tsim Sha Tsui Station
+Basement, Empress Plaza, Nos. 17-19 Chatham Road South, Kowloon.
+ is 0.32km away from Tsim Sha Tsui Station
+Basement, Buckingham Building, 319 Nathan Road, Kowloon
+ is 0.97km away from Tsim Sha Tsui Station
+Shop A, Seaview Court, 55 Shanghai Street, Kowloon
+ is 0.82km away from Tsim Sha Tsui Station
