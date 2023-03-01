@@ -157,3 +157,59 @@ Basement, Buckingham Building, 319 Nathan Road, Kowloon,,,,,,,,
  is 0.97km away from Tsim Sha Tsui Station
 Shop A, Seaview Court, 55 Shanghai Street, Kowloon,,,,,,,,
  is 0.82km away from Tsim Sha Tsui Station
+ 
+ ****** ******
+ 
+ # Updated wellcome stores data and Pandas version
+ 
+ # import the required modules
+import requests
+import json
+import math
+import pandas as pd
+
+# Construct a function to calculate distance between two coordinates using hints from Cody :)
+def great_circle(lon1, lat1, lon2, lat2):
+  radius_of_earth = 6371
+  lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+  return radius_of_earth * (math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon1 - lon2)))
+
+# Construct a function to access address
+def getGeoCoord(address,key):
+  base_url = 'https://maps.googleapis.com/maps/api/geocode/json?'
+  url = base_url+'address='+address.replace(' ', '+')+'&key='+API_KEY
+  response = requests.get(url,timeout=10)
+  data = response.json() # return .json format
+  if data['status'] == 'OK': # check the data is valid
+    result = data['results'][0]
+    location = result['geometry']['location']
+    return location['lat'], location['lng']
+  else:
+    # print("error: "+address)
+    # don't print the errors, it's so annoying!!
+    return None
+
+# Find the coordinates of Tsim Sha Tsui Station using Google Maps Geocoding API and Places API
+API_KEY = 'AIzaSyB_6H9c8l4ABA6quJOWpLxL4ROZZL2bgIY' # Thanks alot for XD's key!!!
+address = 'Tsim Sha Tsui Station, Hong Kong'
+#print(getGeoCoord(address,API_KEY))
+tsim_sha_tsui_lat = getGeoCoord(address,API_KEY)[0]
+tsim_sha_tsui_lon = getGeoCoord(address,API_KEY)[1]
+
+# get coordinates of Wellcome stores using Wellcome website
+# read data 
+stores = pd.read_csv('/content/WellcomeStore_Updated_02.csv', header=None)
+
+for i in range(len(stores)):
+    store_address = str(stores.iloc[i][0]) + str(stores.iloc[i][1]) + str(stores.iloc[i][2]) + str(stores.iloc[i][3])+ str(stores.iloc[i][4])+ str(stores.iloc[i][5]) 
+    coords = getGeoCoord(store_address, API_KEY)
+    # add a check for None before trying to access the coords 
+    if coords is not None:
+      store_lat, store_lon = coords[0], coords[1]
+
+      # calculate the distance between Tsim Sha Tsui Station and each Wellcome store. Print those within 1km
+      distance = great_circle(tsim_sha_tsui_lon, tsim_sha_tsui_lat, float(store_lon), float(store_lat))
+      if distance <= 1: # if distance is less than or equal to 1km
+        print(f'{store_address} is {distance:.2f}km away from Tsim Sha Tsui Station')
+      # else:
+      #   print(f'Could not retrieve coordinates for address "{store_address} or it is more than 1km away Tsim Sha Tsui Station"')
