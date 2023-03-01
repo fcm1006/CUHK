@@ -1,3 +1,5 @@
+# Raw wellcome stores data version
+
 # Import the required modules
 import requests
 import json
@@ -73,4 +75,85 @@ Basement, Empress Plaza, Nos. 17-19 Chatham Road South, Kowloon.
 Basement, Buckingham Building, 319 Nathan Road, Kowloon
  is 0.97km away from Tsim Sha Tsui Station
 Shop A, Seaview Court, 55 Shanghai Street, Kowloon
+ is 0.82km away from Tsim Sha Tsui Station
+ 
+ 
+ ****** ******
+ 
+ # Updated wellcome stores data from website
+ 
+ 
+ # import the required modules
+import requests
+import json
+from math import radians, degrees, sin, cos, asin, acos, sqrt
+
+# Construct a function to calculate distance between two coordinates using hints from Cody :)
+def great_circle(lon1, lat1, lon2, lat2):
+  radius_of_earth = 6371
+  lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+  return radius_of_earth * (acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2)))
+
+# Construct a function to access address
+def getGeoCoord(address,key):
+  base_url = 'https://maps.googleapis.com/maps/api/geocode/json?'
+  url = base_url+'address='+address.replace(' ', '+')+'&key='+API_KEY
+  response = requests.get(url,timeout=10)
+  data = response.json() # return .json format
+  if data['status'] == 'OK': # check the data is valid
+    result = data['results'][0]
+    location = result['geometry']['location']
+    return location['lat'], location['lng']
+  else:
+    # print("error: "+address)
+    # don't print the errors, it's so annoying!!
+    return None
+
+# Find the coordinates of Tsim Sha Tsui Station using Google Maps Geocoding API and Places API
+API_KEY = 'AIzaSyB_6H9c8l4ABA6quJOWpLxL4ROZZL2bgIY' # thans a a lot for XD's key!!!
+address = 'Tsim Sha Tsui Station, Hong Kong'
+print(getGeoCoord(address,API_KEY))
+tsim_sha_tsui_lat = getGeoCoord(address,API_KEY)[0]
+tsim_sha_tsui_lon = getGeoCoord(address,API_KEY)[1]
+
+
+
+# get coordinates of Wellcome stores using Wellcome website
+# read data 
+with open('/content/sample_data/WellcomeStore_Updated_01.csv','r') as infile:
+    add = []
+    coor = []
+    for line in infile:
+        add.append(line)
+        coords = getGeoCoord(line,API_KEY)
+        coor.append(coords) 
+with open('/content/sample_data/WellcomeStore_Updated_01.csv','r') as infile:
+  for i in range(len(add)):
+    store_address = add[i]
+    coords = coor[i]
+    # add a check for None before trying to access the coords 
+    if coords is not None:
+      store_lat, store_lon = str(coords[0]), str(coords[1])
+
+      # calculate the distance between Tsim Sha Tsui Station and each Wellcome store. Print those within 1km
+      distance = great_circle(tsim_sha_tsui_lon, tsim_sha_tsui_lat, float(store_lon), float(store_lat))
+      if distance <= 1: # if distance is less than or equal to 1km
+        print(f'{store_address} is {distance:.2f}km away from Tsim Sha Tsui Station')
+      # else:
+      #   print(f'Could not retrieve coordinates for address "{store_address} or it is more than 1km away Tsim Sha Tsui Station"')
+  
+  ******
+Shop C and Portion of Shop D on Ground Floor, Chevalier House, Nos. 45-51 Chatham Road South, Kowloon,,,,,,,,
+ is 0.37km away from Tsim Sha Tsui Station
+Ground Floor, Luna Court, Nos 53-54, Kimberley Road, Tsim Sha Tsui, Kowloon.,,,,,,
+ is 0.43km away from Tsim Sha Tsui Station
+Ground Floor, Liberty Mansion, 26E Jordan Road, Kowloon,,,,,,,,
+ is 0.84km away from Tsim Sha Tsui Station
+Basement, Far East Consortium Building, No. 204-206 Nathan Road. Kowloon,,,,,,,,,
+ is 0.66km away from Tsim Sha Tsui Station
+Basement, Empress Plaza, Nos. 17-19 Chatham Road South, Kowloon.,,,,,,,,
+ is 0.32km away from Tsim Sha Tsui Station
+Basement, Buckingham Building, 319 Nathan Road, Kowloon,,,,,,,,
+ is 0.97km away from Tsim Sha Tsui Station
+Shop A, Seaview Court, 55 Shanghai Street, Kowloon,,,,,,,,
  is 0.82km away from Tsim Sha Tsui Station
