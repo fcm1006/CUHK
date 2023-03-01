@@ -1,7 +1,7 @@
 # Import the required modules
 import requests
 import json
-import math
+from math import radians, degrees, sin, cos, asin, acos, sqrt
 
 # Construct a function to calculate distance between two coordinates using hints from Cody :)
 def great_circle(lon1, lat1, lon2, lat2):
