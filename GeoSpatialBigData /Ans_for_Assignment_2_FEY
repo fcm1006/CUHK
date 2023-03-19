@@ -1,0 +1,227 @@
+# Assignment 2
+
+Huanan Seafood Market is locatted at lat:30.619779, lng:114.257871 (WGS coordinate), was suspected to be the source of the spreading of COVID-19.
+
+1. Would you please find all of the hospitals within 2000 meters from the market
+* google nearby search. see more: https://developers.google.com/places/web-service/search
+* types field:"hospital" https://developers.google.com/places/web-service/supported_types
+
+
+2. Plot all of the hospital names with their WGS locations on the base map of Gaode and Google satellite map
+
+3. Calculate the GCJ coordiantes of those hospitals and plot them on the same map as step2 (don't create new map object)
+
+4. Link the corresponding hospital among WGS and GCJ coordinates, and plot the link on the same map as step2 (don't create new map object)
+
+# 01.Find all of the hospitals within 2000 meters from the market
+
+import requests
+import json
+
+# import your Google api key
+YOUR_KEY = 'AIzaSyAxQ8Mvo9hqlmgr3DBDtmxCkkl-idCbTkE'
+BASE_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?key={0}&location={1}&radius={2}&type={3}&keyword={4}'  
+
+
+def jsonFormat(res):
+  # return all the result in a dict with coordinate
+  # return like {'a':[23.23,112.213], 'b':[31.552,127.831]}
+  c = dict() # empty dict as container
+  for i in res['results']:
+  # print(i['name'], i['geometry']['location']['lat'], i['geometry']['location']['lng'])
+    c[i['name']] = [float(i['geometry']['location']['lat']), 
+                    float(i['geometry']['location']['lng'])]  
+  return c
+  
+   
+def nearBySearch(lat, lng, radius, placeType = '', keyword = ''):
+  latlng = str(lat) + ',' + str(lng)
+  url = BASE_URL.format(YOUR_KEY, latlng, radius, placeType, keyword)
+  # print(url)
+  response = requests.get(url,timeout=10)
+  data = response.json()
+  if data['status'] == 'OK':
+    return jsonFormat(data)
+  else:
+    print("error: "+ url)
+    return
+
+wh_lat = 30.619779
+wh_lng = 114.257871
+typecode = 'hospital'
+radius_init = 2000
+
+wh_hospital = nearBySearch(wh_lat, wh_lng, radius_init, typecode)
+print(wh_hospital)
+
+from math import radians, degrees, sin, cos, asin, acos, sqrt
+
+def great_circle(lon1, lat1, lon2, lat2):
+  radius_of_earth = 6371
+  lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+  return radius_of_earth * (acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2)))
+
+print(great_circle(wh_lng, wh_lat, wh_lng+0.01, wh_lat))
+
+# 0.01 unit in lat degree ~1.11km
+# 0.01 unit in lat degree ~0.956km
+
+ratio_of_lng_km = 0.01/0.956
+ratio_of_lat_km = 0.01/1.11
+
+wh_lat = 30.619779
+wh_lng = 114.257871
+
+radius_init = 2000
+
+# # ul: upper left
+# # lr: lower right
+# ul_lat = wh_lat + (radius_init/1000) * ratio_of_lat_km
+# ul_lng = wh_lng + (radius_init/1000) * ratio_of_lng_km
+# lr_lat = wh_lat + (radius_init/1000) * ratio_of_lat_km
+# lr_lng = wh_lng + (radius_init/1000) * ratio_of_lng_km
+
+# # center of left box
+# subbox_ul_lat = (wh_lat + ul_lat) / 2
+# subbox_ul_lng = (wh_lng + ul_lng) / 2
+
+# # center of upper right box
+# subbox_ur_lat = (wh_lat + ul_lat) / 2
+# subbox_ur_lng = (wh_lng + lr_lng) / 2
+
+# # center of lower left box
+# subbox_ll_lat = (wh_lat + lr_lat) / 2
+# subbox_ll_lng = (wh_lng + ul_lng) / 2
+
+# ## center of lower right box
+# subbox_lr_lat = (wh_lat + lr_lat) / 2
+# subbox_lr_lng = (wh_lng + lr_lng) / 2
+
+ratio_of_lng_km = 0.01/0.956
+ratio_of_lat_km = 0.01/1.11
+radius_init = 2000
+
+def get_sub_center(lat, lng,radius):
+  ul_lat = lat + (radius/1000) * ratio_of_lat_km
+  ul_lng = lng - (radius/1000) * ratio_of_lng_km
+  lr_lat = lat - (radius/1000) * ratio_of_lat_km
+  lr_lng = lng + (radius/1000) * ratio_of_lng_km
+
+  result = [
+      [(lat + ul_lat)/2, (lng+ul_lng)/2],
+      [(lat + ul_lat)/2, (lng+lr_lng)/2],
+      [(lat + lr_lat)/2, (lng+ul_lng)/2],
+      [(lat + lr_lat)/2, (lng+lr_lng)/2]
+  ]
+  return result
+
+subcenters = get_sub_center(wh_lat, wh_lng, 2000)
+print(subcenters)
+
+for i in get_sub_center(wh_lat, wh_lng, 2000):
+  hospital_res = nearBySearch(i[0], i[1], radius_init/(2**0.5), typecode)
+  print(len(hospital_res))
+  
+  lst_box = [
+    [wh_lat, wh_lng, radius_init]
+]
+
+container = dict()
+
+while lst_box:
+  [lat, lng, radius] = lst_box.pop()
+  # print(lat, lng, radius)
+  res = nearBySearch(lat, lng, radius*1.05, typecode)
+for k in res:
+  container[k] = res[k]
+if len(res) >= 20:
+  # print('split:', lat, lng)
+  subcenter = get_sub_center(lat,lng, radius)
+  for sub in subcenter:
+    lst_box.append([sub[0], sub[1], radius/(2**0.5)])
+
+print(container)
+
+# 02.Plot all of the hospital names with their WGS locations on the base map of Gaode and Google satellite map
+
+!pip install folium --user
+# see more https://python-visualization.github.io/folium/quickstart.html
+
+# popular basemap url
+google_road_map = 'http://mt.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+google_satallite_map = 'http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}'
+gaode = 'http://wprd03.is.autonavi.com/appmaptile?style=7&x={x}&y={y}&z={z}' 
+tencent = 'http://rt1.map.gtimg.com/tile?z={z}&x={x}&y={-y}&styleid=1&version=117'
+
+# ManyMaps = folium.Map(location=[22.1935149,113.5344088], zoom_start=16)
+
+# # add them as the optional basemap 
+# folium.TileLayer(tiles=google_road_map, attr='Google Map', name= 'Google Map').add_to(ManyMaps)
+# folium.TileLayer(tiles=google_satallite_map, attr='Google Satellite', name= 'Google Satellite').add_to(ManyMaps)
+# folium.TileLayer(tiles=gaode, attr='高德地图',name = '高德地图').add_to(ManyMaps)
+# folium.TileLayer(tiles=tencent, attr='腾讯地图',name = '腾讯地图').add_to(ManyMaps)
+# folium.LayerControl().add_to(ManyMaps)
+
+import folium
+
+map_wh = folium.Map(location = [wh_lat, wh_lng], zoom_start = 16)
+# google_road_map = 'http://mt.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+folium.TileLayer(tiles=google_satallite_map, attr='Google Satellite', name= 'Google Satellite').add_to(map_wh)
+folium.TileLayer(tiles=gaode, attr='高德地图',name = '高德地图').add_to(map_wh)
+# folium.TileLayer(tiles = 'Google Roadmap', attr = 'Google Maps').add_to(map_wh)
+folium.LayerControl().add_to(map_wh)
+for k in container:
+  folium.Marker(container[k], tooltip=k, popup=container[k]).add_to(map_wh)
+
+map_wh
+
+# 03.Calculate the GCJ coordiantes of those hospitals and plot them on the same map as step2 (don't create new map object)
+
+# https://pypi.org/project/coord-convert/
+
+!pip install coord_convert
+
+from coord_convert.transform import wgs2gcj, gcj2wgs
+ 
+# import folium
+
+map_wh = folium.Map(location = [wh_lat, wh_lng], zoom_start = 16)
+# google_road_map = 'http://mt.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+folium.TileLayer(tiles=google_satallite_map, attr='Google Satellite', name= 'Google Satellite').add_to(map_wh)
+folium.TileLayer(tiles=gaode, attr='高德地图',name = '高德地图').add_to(map_wh)
+folium.TileLayer(tiles = 'Google Roadmap', attr = 'Google Maps').add_to(map_wh)
+folium.LayerControl().add_to(map_wh)
+for k in container:
+  folium.Marker(container[k], tooltip=k, popup=container[k]).add_to(map_wh)
+
+
+
+for location, coordinates in container.items():
+    wgs_lat, wgs_lng = coordinates
+    gcj_lng, gcj_lat = wgs2gcj(wgs_lng, wgs_lat)
+    # print(gcj_lng, gcj_lat)   
+    folium.Marker([gcj_lat,gcj_lng],tooltip=[location]).add_to(map_wh)
+
+map_wh
+
+# 04.Link the corresponding hospital among WGS and GCJ coordinates, and plot the link on the same map as step2 (don't create new map object)
+
+# import folium
+
+# map_wh = folium.Map(location = [wh_lat, wh_lng], zoom_start = 16)
+# google_road_map = 'http://mt.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+# folium.TileLayer(tiles=google_satallite_map, attr='Google Satellite', name= 'Google Satellite').add_to(map_wh)
+# folium.TileLayer(tiles=gaode, attr='高德地图',name = '高德地图').add_to(map_wh)
+# folium.TileLayer(tiles = 'Google Roadmap', attr = 'Google Maps').add_to(map_wh)
+# folium.LayerControl().add_to(map_wh)
+
+for location, coordinates in container.items():
+    wgs_lat, wgs_lng = coordinates
+    gcj_lng, gcj_lat = wgs2gcj(wgs_lng, wgs_lat)
+    points = [[wgs_lat,wgs_lng], [gcj_lat,gcj_lng]]
+    # print(points)
+    folium.PolyLine(points, color='red', weight = 2.5).add_to(map_wh)
+
+map_wh
+
+
