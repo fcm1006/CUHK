@@ -132,15 +132,17 @@ while lst_box:
   [lat, lng, radius] = lst_box.pop()
   # print(lat, lng, radius)
   res = nearBySearch(lat, lng, radius*1.05, typecode)
-for k in res:
-  container[k] = res[k]
-if len(res) >= 20:
-  # print('split:', lat, lng)
-  subcenter = get_sub_center(lat,lng, radius)
-  for sub in subcenter:
-    lst_box.append([sub[0], sub[1], radius/(2**0.5)])
+  if res:
+    for k in res:
+      container[k] = res[k]
+    if len(res) >= 20:
+      # print('split:', lat, lng)
+      subcenter = get_sub_center(lat,lng, radius)
+      for sub in subcenter:
+        lst_box.append([sub[0], sub[1], radius/(2**0.5)])
 
 print(container)
+#len(container)=743
 
 # 02.Plot all of the hospital names with their WGS locations on the base map of Gaode and Google satellite map
 
